@@ -9,7 +9,7 @@
 
 void leg_init();
 float* leg_deg();
-namespace Leg {
+float* leg_ctrl(float *tor_ary);
 class joint {
 public:
     joint();
@@ -21,25 +21,29 @@ public:
         _m.enable();
     }
     float deg_clc() {
-        float temp_deg = _m.feedback_.pos;
-        if(_dir == 1 && _zero == 0) return temp_deg;
+        float temp_deg = _m.status.pos;
+        if(_dir == 1 && _zero == 0) {
+            joint_deg = temp_deg;
+            return temp_deg;
+        }
         else {
             temp_deg = (temp_deg-_zero)*(float)_dir;
+            joint_deg = temp_deg;
             return temp_deg;
         }
     }
     void joint_ctrl(float tor) {
-        _m.update(tor);
+        _m.control(0,0,0,0,tor);
     }
 private:
     Motor::DMMotor _m;
     float _zero;
     int _dir;
     float _max_tor;
+    float joint_deg;
 };
-}
 
-extern Leg::joint joint1;
-extern Leg::joint joint2;
+extern joint joint1;
+extern joint joint2;
 
 #endif //APP_LEG_MOTOR_H
