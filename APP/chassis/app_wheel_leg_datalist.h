@@ -13,6 +13,6 @@
 #define LEG_L3 LEG_L2
 #define LEG_L5 0.0814f
 
-#define WHEEL_M 0.697f
+#define WHEEL_M 1.1f
 #define WHEEL_R 0.06f
-
+#define WHEEL_I (566.352f*1.3/1000/1000)
