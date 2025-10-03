@@ -55,7 +55,7 @@ void bsp_can_send(bsp_can_e e, uint32_t id, uint8_t *s) {
         .MessageMarker = 0x01
     };
     while(handle[e]->Instance->TXFQS & FDCAN_TXFQS_TFQF) __NOP();
-    HAL_FDCAN_AddMessageToTxFifoQ(handle[e], &header, s);
+    BSP_ASSERT(HAL_FDCAN_AddMessageToTxFifoQ(handle[e], &header, s) == HAL_OK);
 }
 
 static uint32_t get_data_length(uint8_t l) {

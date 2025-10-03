@@ -18,7 +18,7 @@ public:
     void joint_enable();
     float deg_clc();
     void joint_ctrl(float tor) {
-        _m.control(0,0,0,0,tor);
+        _m.control(0,0,0,0,tor*(float)_dir);
     }
 private:
     Motor::DMMotor _m;
