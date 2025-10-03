@@ -30,6 +30,7 @@
 #include "app_music.h"
 #include "app_terminal.h"
 #include "bsp_flash.h"
+#include "iwdg.h"
 #include "usb_device.h"
 
 bool inited_ = false;
@@ -102,6 +103,7 @@ void app_sys_task() {
     app_sys_init();
     bsp_led_set(0, 255, 0);
     while(app_ins_status() != 2)
+        HAL_IWDG_Refresh(&hiwdg1),
         OS::Task::SleepMilliseconds(1);
     if(!app_sys_err()) {
         // bsp_buzzer_flash(1976, 0.5, 125);
@@ -125,6 +127,7 @@ void app_sys_task() {
             bsp_led_set(0, 0, 0);
             OS::Task::SleepMilliseconds(100);
         }
+        HAL_IWDG_Refresh(&hiwdg1);
     }
 }
 

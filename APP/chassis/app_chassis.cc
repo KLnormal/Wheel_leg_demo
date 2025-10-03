@@ -36,29 +36,29 @@ void  Chassis_Wheel_Leg::leg::leg_ctrl(float tor1, float tor2) {
 }
 
 joint right_joint1("joint1",Motor::DMMotor::J4310,{
-        .slave_id = 0x11,
-        .master_id = 0x21,
+        .slave_id = 0x21,
+        .master_id = 0x11,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
     },1,-std::numbers::pi/2,2);
 joint right_joint2("joint2",Motor::DMMotor::J4310,{
-        .slave_id = 0x12,
-        .master_id = 0x22,
+        .slave_id = 0x22,
+        .master_id = 0x12,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
     },1,-std::numbers::pi/2,2);
 joint left_joint3("joint3",Motor::DMMotor::J4310,{
-        .slave_id = 0x13,
-        .master_id = 0x23,
+        .slave_id = 0x23,
+        .master_id = 0x13,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
     },-1,std::numbers::pi/2,2);
 joint left_joint4("joint4",Motor::DMMotor::J4310,{
-        .slave_id = 0x14,
-        .master_id = 0x24,
+        .slave_id = 0x24,
+        .master_id = 0x14,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
@@ -77,12 +77,11 @@ void app_chassis_task(void *args) {
     right_leg.leg_init();
     left_leg.leg_init();
 	while(true) {
-	    // left_leg.leg_ctrl(0,0);
-	    // right_leg.leg_ctrl(0,0);
-	    // right_leg.joint_get_polar();
-	    // left_leg.joint_get_polar();
-
-	    bsp_uart_printf(E_UART_DEBUG,"%f,%f,%f,%f\n",right_leg._L0,right_leg._Phi0,left_leg._L0,left_leg._Phi0);
+	    left_leg.leg_ctrl(0,0);
+	    right_leg.leg_ctrl(0,0);
+	    right_leg.joint_get_polar();
+	    left_leg.joint_get_polar();
+	    bsp_uart_printf(E_UART_DEBUG,"%f,%f,%f,%f\n",right_leg._Phi0,right_leg._y0,left_leg._Phi0,left_leg._y0);
 		OS::Task::SleepMilliseconds(1);
 	}
 }

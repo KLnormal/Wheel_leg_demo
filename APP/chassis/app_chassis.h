@@ -27,12 +27,14 @@ public:
         _joint2->joint_enable();
     }
     void leg_force_ctrl(float force_x, float force_y);
-    float _L0, _Phi0;
-private:
-    float _phi1,_phi4;
-    float _x0,_y0;
     void joint_get_polar();
     void leg_ctrl(float tor1, float tor2);
+    float _L0, _Phi0;
+    float _x0,_y0;
+private:
+    float _phi1,_phi4;
+
+
     joint *_joint1,*_joint2;
     dynamic_motor *_motor;
     float tor_j1, tor_j2, tor_motor;
