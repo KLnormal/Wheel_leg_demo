@@ -13,7 +13,6 @@
 
 void Chassis_Wheel_Leg::leg::leg_force_ctrl(float force, float tor) {
     leg_ctrl(vmc_tor1,vmc_tor2);
-    // leg_ctrl(-0.0,0.0);
     joint_get_polar();
     float temp_y, temp_x;
     temp_y = (_xb - _xd) + LEG_L2*cos(_phi2);
@@ -95,10 +94,10 @@ joint left_joint4("joint4",Motor::DMMotor::J4310,{
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
     },-1,std::numbers::pi/2,2);
 
-dynamic_motor right_motor('a');
-dynamic_motor left_motor('b');
+dynamic_motor right_motor('b');
+dynamic_motor left_motor("tset_motor",Motor::DJIMotor::M3508,{2,E_CAN1,Motor::DJIMotor::CURRENT});
 Chassis_Wheel_Leg::leg right_leg(&right_joint1,&right_joint2,&right_motor);
-Chassis_Wheel_Leg::leg left_leg(&left_joint4,&left_joint3,&left_motor);
+Chassis_Wheel_Leg::leg left_leg(&left_joint4,&left_joint3,&right_motor);
 
 
 // 静态任务，在 CubeMX 中配置
@@ -107,14 +106,14 @@ void app_chassis_task(void *args) {
 	while(!app_sys_ready()) OS::Task::SleepMilliseconds(10);
     right_leg.leg_init();
     left_leg.leg_init();
+    float data;
+    left_motor.motor_init();
 	while(true) {
-	    // left_leg.leg_ctrl(0,0);
-	    // right_leg.leg_ctrl(0,0);
-	    // right_leg.joint_get_polar();
-	    // left_leg.joint_get_polar();
+	    left_motor.motor_tor(0);
+	    data = left_motor.get_deg();
 	    right_leg.leg_force_ctrl(-12,0);
 	    left_leg.leg_force_ctrl(-12,0);
-	    bsp_uart_printf(E_UART_DEBUG,"%f,%f\n",right_leg.vmc_tor1,right_leg.vmc_tor2);
+	    bsp_uart_printf(E_UART_DEBUG,"%f, %d\n",data, left_motor._rounds);
 		OS::Task::SleepMilliseconds(1);
 	}
 }

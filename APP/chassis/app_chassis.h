@@ -6,7 +6,6 @@
 
 #include "app_conf.h"
 #include "app_wheel_leg_datalist.h"
-#include "app_leg_forward.h"
 #include "app_leg_motor.h"
 #include "sys_task.h"
 
@@ -32,8 +31,8 @@ public:
     float _L0, _Phi0;
     float _x0,_y0;
     float vmc_tor1,vmc_tor2;
-private:
     float _phi1,_phi4;
+private:
     joint *_joint1,*_joint2;
     dynamic_motor *_motor;
     float tor_j1, tor_j2, tor_motor;

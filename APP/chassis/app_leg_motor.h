@@ -8,6 +8,8 @@
 #include "dev_motor_dji.h"
 #include "dev_motor_dm.h"
 
+#include <fast_math_functions.h>
+
 
 class joint {
 public:
@@ -27,17 +29,44 @@ private:
     float _max_tor;
     float joint_deg;
 };
+/*
+ * 铁损阻力：72rpm/Nm
+ * 减速比：3591/187
+ * 扭矩常数：0.3Nm/A
+ * 机械转角：0~8192
+ * 转子转速单位：RPM
+ * 电流： -20A~20A  -16384~16384
+ */
+#define ENCODER_RANGE 8192
+#define CURRENT_RANGE 16384
+#define CURRENT_CAST(current) (current/20*CURRENT_RANGE)
+#define TOR_CAST(tor) CURRENT_CAST(tor/0.3)
 
 class dynamic_motor {
     public:
     dynamic_motor();
     dynamic_motor(char a):_a(a){}
+    dynamic_motor(const char *name,const Motor::DJIMotor::Model &model,const Motor::DJIMotor::Param &param)
+        : _motor(name,model,param) {
+    }
+    void motor_init() {_motor.init();}
+    void motor_tor(float tor) {
+        int16_t ctrl_current = (int16_t)TOR_CAST(tor);
+        _motor.update(ctrl_current);
+        motor_deg_clc();
+    }
+    float get_deg() const {return _deg;}
+    int32_t _rounds = 0;
 private:
-    Motor::DJIMotor _m;
+    void motor_deg_clc();
+    Motor::DJIMotor _motor;
+
+    int16_t encoder = 0;
+    float _deg = 0;
+    float _dis = 0;
     char _a;
 };
 
 extern joint joint1;
 extern joint joint2;
-
 #endif //APP_LEG_MOTOR_H
