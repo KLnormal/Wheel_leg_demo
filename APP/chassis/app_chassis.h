@@ -9,6 +9,7 @@
 #include "app_leg_motor.h"
 #include "sys_task.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,12 +41,19 @@ private:
     float _phi2,_phi3;
     float _xb,_xd,_yb,_yd;
 };
+class chassis {
+    public:
+    chassis();
+    chassis(leg *left_leg, leg *right_leg)
+    : _left_leg(left_leg), _right_leg(right_leg) {
+    };
+private:
+    leg *_left_leg, *_right_leg;
+};
 }
-
 
 void app_chassis_init();
 void app_chassis_task(void *argument);
-
 
 
 #ifdef __cplusplus

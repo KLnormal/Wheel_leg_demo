@@ -94,10 +94,10 @@ joint left_joint4("joint4",Motor::DMMotor::J4310,{
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
     },-1,std::numbers::pi/2,2);
 
-dynamic_motor right_motor('b');
-dynamic_motor left_motor("tset_motor",Motor::DJIMotor::M3508,{2,E_CAN1,Motor::DJIMotor::CURRENT});
+dynamic_motor right_motor("right_motor",Motor::DJIMotor::M3508,{1,E_CAN1,Motor::DJIMotor::CURRENT});
+dynamic_motor left_motor("left_motor",Motor::DJIMotor::M3508,{2,E_CAN1,Motor::DJIMotor::CURRENT});
 Chassis_Wheel_Leg::leg right_leg(&right_joint1,&right_joint2,&right_motor);
-Chassis_Wheel_Leg::leg left_leg(&left_joint4,&left_joint3,&right_motor);
+Chassis_Wheel_Leg::leg left_leg(&left_joint4,&left_joint3,&left_motor);
 
 
 // 静态任务，在 CubeMX 中配置
@@ -108,6 +108,7 @@ void app_chassis_task(void *args) {
     left_leg.leg_init();
     float data;
     left_motor.motor_init();
+    right_motor.motor_init();
 	while(true) {
 	    left_motor.motor_tor(0);
 	    data = left_motor.get_deg();
