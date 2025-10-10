@@ -45,9 +45,8 @@ private:
 class dynamic_motor {
     public:
     dynamic_motor();
-    dynamic_motor(char a):_a(a){}
-    dynamic_motor(const char *name,const Motor::DJIMotor::Model &model,const Motor::DJIMotor::Param &param)
-        : _motor(name,model,param) {
+    dynamic_motor(const char *name,const Motor::DJIMotor::Model &model,const Motor::DJIMotor::Param &param, int16_t dir)
+        : _motor(name,model,param), _dir(dir) {
     }
     void motor_init() {_motor.init();}
     void motor_tor(float tor) {
@@ -55,16 +54,16 @@ class dynamic_motor {
         _motor.update(ctrl_current);
         motor_deg_clc();
     }
-    float get_deg() const {return _deg;}
+    float get_deg() const {return (float)_dir*_deg;}
+    float get_speed() const {return (float)_dir*_speed;}
     int32_t _rounds = 0;
 private:
     void motor_deg_clc();
     Motor::DJIMotor _motor;
-
-    int16_t encoder = 0;
+    int16_t encoder = 0, _dir = 0;
     float _deg = 0;
     float _dis = 0;
-    char _a;
+    float _speed = 0;
 };
 
 extern joint joint1;

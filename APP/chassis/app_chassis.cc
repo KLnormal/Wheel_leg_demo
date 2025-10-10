@@ -4,6 +4,7 @@
 
 #include "app_chassis.h"
 
+#include "app_ins.h"
 #include "app_sys.h"
 #include "sys_task.h"
 #include "SJTU_Matrix/matrix.h"
@@ -11,7 +12,7 @@
 
 #ifdef COMPILE_CHASSIS
 
-void Chassis_Wheel_Leg::leg::leg_force_ctrl(float force, float tor) {
+void Chassis_Wheel_Leg::leg::leg_force_ctrl(float force, float tor, float dynamic_tor) {
     leg_ctrl(vmc_tor1,vmc_tor2);
     joint_get_polar();
     float temp_y, temp_x;
@@ -41,6 +42,7 @@ void Chassis_Wheel_Leg::leg::leg_force_ctrl(float force, float tor) {
     answer = Jacobi_T*R*M*target;
     vmc_tor1 = answer[0][0];
     vmc_tor2 = answer[1][0];
+    _motor->motor_tor(dynamic_tor);
 }
 void Chassis_Wheel_Leg::leg::joint_get_polar() {
     float xb = LEG_L1*cos(_phi1), yb = LEG_L1*sin(_phi1);
@@ -94,8 +96,10 @@ joint left_joint4("joint4",Motor::DMMotor::J4310,{
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
     },-1,std::numbers::pi/2,2);
 
-dynamic_motor right_motor("right_motor",Motor::DJIMotor::M3508,{1,E_CAN1,Motor::DJIMotor::CURRENT});
-dynamic_motor left_motor("left_motor",Motor::DJIMotor::M3508,{2,E_CAN1,Motor::DJIMotor::CURRENT});
+float32_t k[12] = {};
+
+dynamic_motor right_motor("right_motor",Motor::DJIMotor::M3508,{1,E_CAN1,Motor::DJIMotor::CURRENT},-1);
+dynamic_motor left_motor("left_motor",Motor::DJIMotor::M3508,{2,E_CAN1,Motor::DJIMotor::CURRENT},1);
 Chassis_Wheel_Leg::leg right_leg(&right_joint1,&right_joint2,&right_motor);
 Chassis_Wheel_Leg::leg left_leg(&left_joint4,&left_joint3,&left_motor);
 
@@ -104,17 +108,24 @@ Chassis_Wheel_Leg::leg left_leg(&left_joint4,&left_joint3,&left_motor);
 void app_chassis_task(void *args) {
 	// Wait for system init.
 	while(!app_sys_ready()) OS::Task::SleepMilliseconds(10);
-    right_leg.leg_init();
-    left_leg.leg_init();
-    float data;
-    left_motor.motor_init();
-    right_motor.motor_init();
+    // right_leg.leg_init();
+    // left_leg.leg_init();
+    // float data;
+    // left_motor.motor_init();
+    // right_motor.motor_init();
+    const auto ins = app_ins_data();
+    Chassis_Wheel_Leg::chassis my_chassis(&left_leg,&right_leg,k,ins,WHEEL_R);
+    my_chassis.chassis_init();
 	while(true) {
-	    left_motor.motor_tor(0);
-	    data = left_motor.get_deg();
-	    right_leg.leg_force_ctrl(-12,0);
-	    left_leg.leg_force_ctrl(-12,0);
-	    bsp_uart_printf(E_UART_DEBUG,"%f, %d\n",data, left_motor._rounds);
+	    // left_motor.motor_tor(0);
+	    // float deg = left_leg.dynamic_get_deg();
+	    // float deg_r = right_leg.dynamic_get_deg();
+	    // right_leg.leg_force_ctrl(-12,0,0);
+	    // left_leg.leg_force_ctrl(-12,0,0);
+	    // bsp_uart_printf(E_UART_DEBUG,"%f,%f\n",deg,deg_r);
+	    my_chassis.chassis_force_ctrl(0,0,0,0,0,0);
+	    float data = my_chassis.left_leg.dis_x;
+	    bsp_uart_printf(E_UART_DEBUG,"%f\n",data);
 		OS::Task::SleepMilliseconds(1);
 	}
 }

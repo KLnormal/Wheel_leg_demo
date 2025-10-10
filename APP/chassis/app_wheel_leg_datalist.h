@@ -24,3 +24,9 @@
 #define BODY_M 4.56f
 #define BODY_L 0.005f
 #define BODY_Im (BODY_L*BODY_L*BODY_M)
+
+#define MOTOR_GEAR (3591.0/187.0)
+
+// struct chassis_data {
+//     float R, L, Lm, l, mw, mp
+// };
