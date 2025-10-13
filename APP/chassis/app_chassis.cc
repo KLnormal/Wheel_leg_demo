@@ -6,6 +6,7 @@
 
 #include "app_ins.h"
 #include "app_sys.h"
+#include "bsp_def.h"
 #include "sys_task.h"
 #include "SJTU_Matrix/matrix.h"
 #include "bsp_uart.h"
@@ -73,30 +74,30 @@ joint right_joint1("joint1",Motor::DMMotor::J4310,{
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },1,-std::numbers::pi/2,2);
+    },1,-std::numbers::pi/2,4);
 joint right_joint2("joint2",Motor::DMMotor::J4310,{
         .slave_id = 0x22,
         .master_id = 0x12,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },1,-std::numbers::pi/2,2);
+    },1,-std::numbers::pi/2,4);
 joint left_joint3("joint3",Motor::DMMotor::J4310,{
         .slave_id = 0x23,
         .master_id = 0x13,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },-1,std::numbers::pi/2,2);
+    },-1,std::numbers::pi/2,4);
 joint left_joint4("joint4",Motor::DMMotor::J4310,{
         .slave_id = 0x24,
         .master_id = 0x14,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },-1,std::numbers::pi/2,2);
+    },-1,std::numbers::pi/2,4);
 
-float32_t k[12] = {};
+float32_t Leg_K[12] ={-4.043629, 6.604705, -0.286051, 0.598847, -0.909995, 3.471357, -0.939515, 3.305373, 3.741991, 8.816603, 0.466169, 0.392743};
 
 dynamic_motor right_motor("right_motor",Motor::DJIMotor::M3508,{1,E_CAN1,Motor::DJIMotor::CURRENT},-1);
 dynamic_motor left_motor("left_motor",Motor::DJIMotor::M3508,{2,E_CAN1,Motor::DJIMotor::CURRENT},1);
@@ -114,8 +115,11 @@ void app_chassis_task(void *args) {
     // left_motor.motor_init();
     // right_motor.motor_init();
     const auto ins = app_ins_data();
-    Chassis_Wheel_Leg::chassis my_chassis(&left_leg,&right_leg,k,ins,WHEEL_R);
+    OS::Task::SleepMilliseconds(3000);
+    Chassis_Wheel_Leg::chassis my_chassis(&left_leg,&right_leg,Leg_K,ins,WHEEL_R);
     my_chassis.chassis_init();
+    float32_t tor_ml, tor_mr, tor_l, tor_r;
+    float32_t left_phi, left_theta, left_x, right_phi, right_theta, right_x;
 	while(true) {
 	    // left_motor.motor_tor(0);
 	    // float deg = left_leg.dynamic_get_deg();
@@ -123,9 +127,22 @@ void app_chassis_task(void *args) {
 	    // right_leg.leg_force_ctrl(-12,0,0);
 	    // left_leg.leg_force_ctrl(-12,0,0);
 	    // bsp_uart_printf(E_UART_DEBUG,"%f,%f\n",deg,deg_r);
-	    my_chassis.chassis_force_ctrl(0,0,0,0,0,0);
-	    float data = my_chassis.left_leg.dis_x;
-	    bsp_uart_printf(E_UART_DEBUG,"%f\n",data);
+	    if(abs(my_chassis.left_leg_struct.phi) > std::numbers::pi/4) {
+	        my_chassis.chassis_force_ctrl(0,0,0,0,0,0);
+	        OS::Task::SleepMilliseconds(10);
+	        BSP_ASSERT(false);
+	    }
+	    tor_r = my_chassis._right_out_put[1];
+	    tor_mr = my_chassis._right_out_put[0];
+	    tor_l = my_chassis._left_out_put[1];
+	    tor_ml = my_chassis._left_out_put[0];
+	    Chassis_Wheel_Leg::chassis::leg_length(0.1,my_chassis.right_force,my_chassis._right_leg,my_chassis.old_left_len,my_chassis.right_len);
+	    Chassis_Wheel_Leg::chassis::leg_length(0.1,my_chassis.left_force,my_chassis._left_leg,my_chassis.old_left_len,my_chassis.left_len);
+	    my_chassis.chassis_force_ctrl(my_chassis.left_force,my_chassis._left_out_put[1],my_chassis._left_out_put[0],my_chassis.right_force,my_chassis._right_out_put[1],my_chassis._right_out_put[0]);
+	    my_chassis.chassis_lqr_clc();
+	    my_chassis.leg_combine();
+
+	    bsp_uart_printf(E_UART_DEBUG,"%f,%f,%f,%f\n",tor_r,tor_mr,tor_l,tor_ml);
 		OS::Task::SleepMilliseconds(1);
 	}
 }

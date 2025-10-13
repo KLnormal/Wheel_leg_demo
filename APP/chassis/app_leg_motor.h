@@ -18,6 +18,9 @@ public:
     :_m(name, model,param),_zero(zero),_dir(dir),_max_tor(max_tor) {
     }
     void joint_enable();
+    void joint_disable() {
+        _m.disable();
+    }
     float deg_clc();
     void joint_ctrl(float tor) {
         _m.control(0,0,0,0,tor*(float)_dir);
@@ -51,7 +54,7 @@ class dynamic_motor {
     void motor_init() {_motor.init();}
     void motor_tor(float tor) {
         int16_t ctrl_current = (int16_t)TOR_CAST(tor);
-        _motor.update(ctrl_current);
+        _motor.update(ctrl_current*_dir);
         motor_deg_clc();
     }
     float get_deg() const {return (float)_dir*_deg;}

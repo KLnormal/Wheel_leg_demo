@@ -12,6 +12,7 @@
 #include "bsp_led.h"
 #include "bsp_sys.h"
 #include "bsp_buzzer.h"
+#include "iwdg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,8 +25,11 @@ __attribute__((unused)) static void bsp_assert_err(const char *file, uint32_t li
     vTaskSuspendAll();
     bsp_led_set(255, 0, 0);
     bsp_buzzer_quiet();
-    while(1)
-        __NOP();
+    // __asm volatile("bkpt 0");
+    while(1) {
+        HAL_IWDG_Refresh(&hiwdg1);
+        HAL_Delay(10);
+    }
 }
 
 #define BSP_ASSERT(arg)                                                                                                \

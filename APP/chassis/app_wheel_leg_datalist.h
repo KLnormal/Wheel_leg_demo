@@ -17,7 +17,7 @@
 #define LEG_Ip (LEG_L*LEG_L*LEG_M)
 #define G 9.82f
 
-#define WHEEL_M 1f
+#define WHEEL_M 0.8f
 #define WHEEL_R 0.06f
 #define WHEEL_I (566.352f*1.3/1000/1000)
 
