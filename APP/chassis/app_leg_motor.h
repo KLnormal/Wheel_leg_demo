@@ -23,6 +23,8 @@ public:
     }
     float deg_clc();
     void joint_ctrl(float tor) {
+        float temp_tor = tor;
+        if(abs(tor) > _max_tor) temp_tor = tor/abs(tor)*_max_tor;
         _m.control(0,0,0,0,tor*(float)_dir);
     }
 private:
@@ -53,7 +55,10 @@ class dynamic_motor {
     }
     void motor_init() {_motor.init();}
     void motor_tor(float tor) {
-        int16_t ctrl_current = (int16_t)TOR_CAST(tor);
+        float temp_tor = tor;
+        if(abs(tor) >= 2.5) temp_tor = tor/abs(tor)*2.5;
+
+        int16_t ctrl_current = (int16_t)TOR_CAST(temp_tor);
         _motor.update(ctrl_current*_dir);
         motor_deg_clc();
     }

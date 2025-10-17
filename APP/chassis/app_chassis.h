@@ -18,11 +18,14 @@
 struct app_ins_data_t;
 extern "C" {
 #endif
-#define LEG_FORWARD 12.0f
-#define LEG_P 100
-#define LEG_D 15
+#define LEG_FORWARD 10.0f
+#define LEG_P 150
+#define LEG_D 50
 #define COMBINE_P 5
 #define COMBINE_D 1
+
+    extern float32_t fit_K[12];
+    extern void k_fit_function(float32_t len);
 namespace Chassis_Wheel_Leg {
 class leg {
 public:
@@ -79,16 +82,16 @@ public:
     }
     void chassis_clc(leg *leg, leg_info *leg_struct,float32_t *data) {
         leg_struct->phi = -_ins->roll/180.0f*M_PI;
-        leg_struct->dot_phi = -_ins->raw.gyro[0]/180.0f*M_PI;
+        leg_struct->dot_phi = -_ins->raw.gyro[0];
         leg_struct->dis_x = leg->dynamic_get_deg()*_wheel_R/MOTOR_GEAR;
-        leg_struct->dot_dis_x = leg->dynamic_get_speed()*_wheel_R/MOTOR_GEAR/60;
+        leg_struct->dot_dis_x = leg->dynamic_get_speed()*_wheel_R/MOTOR_GEAR;
         float temp_leg = leg->_Phi0;
         float temp_theta = -(PI/2-(temp_leg+leg_struct->phi));
-        float dot_theta = 0.4f*leg_struct->dot_theta + 0.6*(temp_theta - leg_struct->theta);
+        float dot_theta = 0.7f*leg_struct->dot_theta + 0.3*(temp_theta - leg_struct->theta);
         leg_struct->theta = temp_theta;
         leg_struct->dot_theta = dot_theta;
         data[0] = leg_struct->theta;
-        data[1] = leg_struct->dot_theta;
+        data[1] = leg_struct->dot_theta*1000;
         data[2] = leg_struct->dis_x;
         data[3] = leg_struct->dot_dis_x;
         data[4] = leg_struct->phi;
@@ -102,18 +105,29 @@ public:
     }
     void chassis_lqr_clc() {
         _left_data[2] -= left_target_dis;
-        _right_data[2] -= right_target_dis;
+        _right_data[2] -= left_target_dis;
         left_target_dis = left_leg_struct.dis_x;
         right_target_dis = right_leg_struct.dis_x;
-        Matrixf<2,6> K(_data_k);
+        // Matrixf<2,6> K(_data_k);
+        // Matrixf<6,1> left_state(_left_data);
+        // Matrixf<2,1> left_temp = K*left_state;
+        // Matrixf<6,1> right_state(_right_data);
+        // Matrixf<2,1> right_temp = K*right_state;
+        k_fit_function(_left_leg->_L0);
+        Matrixf<2,6> K1(fit_K);
         Matrixf<6,1> left_state(_left_data);
-        Matrixf<2,1> left_temp = K*left_state;
+        Matrixf<2,1> left_temp = K1*left_state;
+        k_fit_function(_right_leg->_L0);
+        Matrixf<2,6> K2(fit_K);
         Matrixf<6,1> right_state(_right_data);
-        Matrixf<2,1> right_temp = K*right_state;
+        Matrixf<2,1> right_temp = K2*right_state;
         _left_out_put[0] = left_temp[0][0];
         _left_out_put[1] = left_temp[1][0];
         _right_out_put[0] = right_temp[0][0];
         _right_out_put[1] = right_temp[1][0];
+
+    }
+    void chassis_fit_clc() {
 
     }
     static void leg_length(float32_t target, float32_t &force, leg *my_leg, float32_t &old, float32_t &current) {
@@ -123,12 +137,13 @@ public:
         force = output;
     }
     void leg_combine() {
-        // float32_t temp_delta = _right_leg->_Phi0 - _left_leg->_Phi0;
-        // float32_t temp_fix;
-        // temp_fix = temp_delta*COMBINE_P;
-        // _left_out_put[1] += (temp_fix + (temp_delta - old_delta_phi)*COMBINE_D);
-        // _right_out_put[1] -= (temp_fix + (temp_delta - old_delta_phi)*COMBINE_D);
+        float32_t temp_delta = _right_leg->_Phi0 - _left_leg->_Phi0;
+        float32_t temp_fix;
+        temp_fix = temp_delta*COMBINE_P;
+        _left_out_put[1] += (temp_fix + (temp_delta - old_delta_phi)*COMBINE_D);
+        _right_out_put[1] -= (temp_fix + (temp_delta - old_delta_phi)*COMBINE_D);
     }
+
     leg_info left_leg_struct, right_leg_struct;
     float32_t _left_out_put[2],_right_out_put[2];
     float32_t left_force = 0, right_force = 0;
@@ -136,8 +151,8 @@ public:
     float32_t left_len, old_left_len, right_len, old_right_len;
     float32_t delta_phi, old_delta_phi;
     float32_t left_target_dis = 0, right_target_dis = 0;
-private:
     float32_t _left_data[6],_right_data[6];
+private:
     float32_t _data_k[12];
     float _wheel_R;
     const app_ins_data_t *_ins;
