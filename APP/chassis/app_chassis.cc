@@ -7,7 +7,6 @@
 #include "app_ins.h"
 #include "app_sys.h"
 #include "bsp_def.h"
-#include "bsp_time.h"
 #include "sys_task.h"
 #include "SJTU_Matrix/matrix.h"
 #include "bsp_uart.h"
@@ -75,51 +74,36 @@ joint right_joint1("joint1",Motor::DMMotor::J4310,{
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },1,-std::numbers::pi/2,7);
+    },1,-std::numbers::pi/2,4);
 joint right_joint2("joint2",Motor::DMMotor::J4310,{
         .slave_id = 0x22,
         .master_id = 0x12,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },1,-std::numbers::pi/2,7);
+    },1,-std::numbers::pi/2,4);
 joint left_joint3("joint3",Motor::DMMotor::J4310,{
         .slave_id = 0x23,
         .master_id = 0x13,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },-1,std::numbers::pi/2,7);
+    },-1,std::numbers::pi/2,4);
 joint left_joint4("joint4",Motor::DMMotor::J4310,{
         .slave_id = 0x24,
         .master_id = 0x14,
         .port = E_CAN2,
         .mode = Motor::DMMotor::MIT,
         .p_max = 12.5, .v_max = 30, .t_max = 10, .kp_max = 500, .kd_max = 5
-    },-1,std::numbers::pi/2,7);
+    },-1,std::numbers::pi/2,4);
 
-float K[12] = {-3.897652, 6.082493, -0.264892, 0.581049, -0.784465, 2.864459, -0.762822, 2.583690, 2.640943, 5.637764, 0.357547, 0.368631};
+float32_t Leg_K[12] ={-4.043629, 6.604705, -0.286051, 0.598847, -0.909995, 3.471357, -0.939515, 3.305373, 3.741991, 8.816603, 0.466169, 0.392743};
 
-float32_t fit_K[12];
 dynamic_motor right_motor("right_motor",Motor::DJIMotor::M3508,{1,E_CAN1,Motor::DJIMotor::CURRENT},-1);
 dynamic_motor left_motor("left_motor",Motor::DJIMotor::M3508,{2,E_CAN1,Motor::DJIMotor::CURRENT},1);
 Chassis_Wheel_Leg::leg right_leg(&right_joint1,&right_joint2,&right_motor);
 Chassis_Wheel_Leg::leg left_leg(&left_joint4,&left_joint3,&left_motor);
-void k_fit_function(float32_t len) {
-    auto l1 = len, l2 = l1 * len, l3 = l2 * len, l4 = l3 * len;
-    fit_K[0] = (-2361.07f)*l4 + (1225.31f)*l3 + (-166.903f)*l2 + (-21.2382f)*l1 + (-0.539707f);
-    fit_K[1] = (-201.808f)*l4 + (133.379f)*l3 + (-32.2669f)*l2 + (0.607461f)*l1 + (-0.055765f);
-    fit_K[2] = (-1745.48f)*l4 + (875.154f)*l3 + (-135.319f)*l2 + (1.52154f)*l1 + (-0.174626f);
-    fit_K[3] = (-1543.18f)*l4 + (785.215f)*l3 + (-126.416f)*l2 + (2.3188f)*l1 + (-0.228859f);
-    fit_K[4] = (-1119.4f)*l4 + (830.556f)*l3 + (-204.58f)*l2 + (10.371f)*l1 + (3.12765f);
-    fit_K[5] = (166.589f)*l4 + (-68.5338f)*l3 + (9.60774f)*l2 + (-1.61931f)*l1 + (0.495759f);
-    fit_K[6] = (-3206.11f)*l4 + (2798.12f)*l3 + (-892.033f)*l2 + (112.722f)*l1 + (1.09372f);
-    fit_K[7] = (366.481f)*l4 + (-151.727f)*l3 + (9.88513f)*l2 + (2.8917f)*l1 + (0.254715f);
-    fit_K[8] = (-1566.49f)*l4 + (1099.86f)*l3 + (-262.553f)*l2 + (14.4538f)*l1 + (3.32308f);
-    fit_K[9] = (-259.57f)*l4 + (334.821f)*l3 + (-98.6408f)*l2 + (1.23825f)*l1 + (3.19796f);
-    fit_K[10] = (12123.3f)*l4 + (-6033.4f)*l3 + (905.209f)*l2 + (-0.651238f)*l1 + (0.640345f);
-    fit_K[11] = (1056.55f)*l4 + (-526.682f)*l3 + (75.1614f)*l2 + (2.15048f)*l1 + (-0.273727f);
-}
+
 
 // 静态任务，在 CubeMX 中配置
 void app_chassis_task(void *args) {
@@ -132,12 +116,10 @@ void app_chassis_task(void *args) {
     // right_motor.motor_init();
     const auto ins = app_ins_data();
     OS::Task::SleepMilliseconds(3000);
-    Chassis_Wheel_Leg::chassis my_chassis(&left_leg,&right_leg,K,ins,WHEEL_R);
+    Chassis_Wheel_Leg::chassis my_chassis(&left_leg,&right_leg,Leg_K,ins,WHEEL_R);
     my_chassis.chassis_init();
     float32_t tor_ml, tor_mr, tor_l, tor_r;
-    uint64_t st, ed;
-    float32_t state_left[6], state_right[6];
-    float32_t out_left[2], out_right[2];
+    float32_t left_phi, left_theta, left_x, right_phi, right_theta, right_x;
 	while(true) {
 	    // left_motor.motor_tor(0);
 	    // float deg = left_leg.dynamic_get_deg();
@@ -145,9 +127,6 @@ void app_chassis_task(void *args) {
 	    // right_leg.leg_force_ctrl(-12,0,0);
 	    // left_leg.leg_force_ctrl(-12,0,0);
 	    // bsp_uart_printf(E_UART_DEBUG,"%f,%f\n",deg,deg_r);
-
-        st = bsp_time_get_us();
-
 	    if(abs(my_chassis.left_leg_struct.phi) > std::numbers::pi/4) {
 	        my_chassis.chassis_force_ctrl(0,0,0,0,0,0);
 	        OS::Task::SleepMilliseconds(10);
@@ -157,20 +136,13 @@ void app_chassis_task(void *args) {
 	    tor_mr = my_chassis._right_out_put[0];
 	    tor_l = my_chassis._left_out_put[1];
 	    tor_ml = my_chassis._left_out_put[0];
-	    Chassis_Wheel_Leg::chassis::leg_length(0.12,my_chassis.right_force,my_chassis._right_leg,my_chassis.old_left_len,my_chassis.right_len);
-	    Chassis_Wheel_Leg::chassis::leg_length(0.12,my_chassis.left_force,my_chassis._left_leg,my_chassis.old_left_len,my_chassis.left_len);
+	    Chassis_Wheel_Leg::chassis::leg_length(0.1,my_chassis.right_force,my_chassis._right_leg,my_chassis.old_left_len,my_chassis.right_len);
+	    Chassis_Wheel_Leg::chassis::leg_length(0.1,my_chassis.left_force,my_chassis._left_leg,my_chassis.old_left_len,my_chassis.left_len);
 	    my_chassis.chassis_force_ctrl(my_chassis.left_force,my_chassis._left_out_put[1],my_chassis._left_out_put[0],my_chassis.right_force,my_chassis._right_out_put[1],my_chassis._right_out_put[0]);
-	    // my_chassis.chassis_force_ctrl(0,0,0,0,0,0);
 	    my_chassis.chassis_lqr_clc();
 	    my_chassis.leg_combine();
-        memcpy(state_left,my_chassis._left_data,sizeof(float32_t)*6);
-	    memcpy(state_right,my_chassis._right_data,sizeof(float32_t)*6);
-	    memcpy(out_left,my_chassis._left_out_put,sizeof(float32_t)*2);
-	    bsp_uart_printf(E_UART_DEBUG,"%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",state_left[0],state_left[1],state_left[2],state_left[3],state_left[4],state_left[5],state_right[0],state_right[1],state_right[2],state_right[3],state_right[4],state_right[5]);
-	    // bsp_uart_printf(E_UART_DEBUG,"%f,%f\n",out_left[0],out_left[1]);
-	    // ed = bsp_time_get_us();
-	    // bsp_uart_printf(E_UART_DEBUG, "%lld\r\n", ed - st);
 
+	    bsp_uart_printf(E_UART_DEBUG,"%f,%f,%f,%f\n",tor_r,tor_mr,tor_l,tor_ml);
 		OS::Task::SleepMilliseconds(1);
 	}
 }

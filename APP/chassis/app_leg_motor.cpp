@@ -34,5 +34,5 @@ void dynamic_motor::motor_deg_clc() {
     }
     encoder = temp_encoder;
     _deg = (float)_rounds*2*PI + (float)encoder/ENCODER_RANGE*2*PI;
-    _speed = _motor.feedback_.speed*2*M_PI/60;
+    _speed = _motor.feedback_.speed;
 }
