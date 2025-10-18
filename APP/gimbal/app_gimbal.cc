@@ -4,6 +4,7 @@
 
 #include "app_gimbal.h"
 
+#include "app_leg.h"
 #include "app_sys.h"
 #include "sys_task.h"
 #include "app_wheel_leg_motor.h"
@@ -30,21 +31,17 @@ wheel_leg_motor::joint left_A(&motor1,-PI_F32/2,1);
 wheel_leg_motor::joint left_E(&motor2,-PI_F32/2,1);
 Motor::DJIMotor test("dynamic",Motor::DJIMotor::M3508,{.id = 0x01, .port = E_CAN1, .mode = Motor::DJIMotor::CURRENT});
 wheel_leg_motor::dynamic dynamic_1(&test,1);
-
+leg::leg left_leg(&left_A,&left_E,&dynamic_1);
 
 void app_gimbal_task(void *args) {
     // Wait for system init.
     while(!app_sys_ready())
         OS::Task::SleepMilliseconds(10);
-    dynamic_1.motor_init();
-    left_A.joint_init();
-    left_E.joint_init();
+    left_leg.leg_init();
     OS::Task::SleepMilliseconds(1000);
     while(true) {
-        dynamic_1.tor_ctrl(0.1);
-        left_A.joint_ctrl(0);
-        left_E.joint_ctrl(0);
-        bsp_uart_printf(E_UART_DEBUG,"%f,%f\n",left_A.joint_deg_,left_E.joint_deg_);
+        left_leg.leg_ctrl(0,0,0);
+        bsp_uart_printf(E_UART_DEBUG,"%f,%f\n",left_leg.my_leg_status_.L0,left_leg.my_leg_status_.phi0);
         OS::Task::SleepMilliseconds(1);
     }
 }
