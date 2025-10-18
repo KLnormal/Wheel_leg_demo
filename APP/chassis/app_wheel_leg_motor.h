@@ -10,6 +10,8 @@
 
 #include <arm_math_types.h>
 
+
+#define PI_F32 3.1415926535897932384626f
 namespace wheel_leg_motor {
 class joint {
     public:
@@ -19,7 +21,7 @@ class joint {
     }
     void joint_init();
     void joint_ctrl(float tor);
-    void joint_ctrl(float P, float I, float D, float sum_limit, float I_limit, float target_pos);//重载了位置PID和扭矩控制
+    void joint_ctrl(float P, float I, float D, float sum_limit, float I_limit, float target_pos);//重载了位置PID
     Motor::DMMotor *joint_;
     float32_t zero_, dir_, joint_deg_, joint_v_;
     float32_t old_pos_ = 0, old_err_ = 0, out_sum_ = 0, out_i_ = 0, out_p_ = 0, out_d_ = 0;
