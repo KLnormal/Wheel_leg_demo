@@ -96,7 +96,6 @@ float32_t leg::leg::Mid_avg_filter(const float32_t data)
     }
     return f_tmp.dataBuf[(MID_AVG_SIZE-1)/2];
 }
-
 void leg::leg::leg_status_clc() {
     //计算phi2,phi3
     my_leg_status_.xb = my_leg_status_.l1*cos(my_leg_status_.phi1), my_leg_status_.yb = my_leg_status_.l1*sin(my_leg_status_.phi1);
