@@ -4,6 +4,7 @@
 
 #include "app_wheel_leg_motor.h"
 #include "app_wheel_leg_datasheet.h"
+
 void wheel_leg_motor::joint::joint_init() {
     joint_->init();
     joint_->enable();
@@ -49,11 +50,9 @@ void wheel_leg_motor::joint::joint_ctrl(float P, float I, float D, float sum_lim
 wheel_leg_motor::dynamic::dynamic(Motor::DJIMotor *dynamic_motor, float32_t dir)
 :dynamic_motor_(dynamic_motor)
 , dir_(dir) { }
-
 void wheel_leg_motor::dynamic::motor_init() {
     this->dynamic_motor_->init();
 }
-
 void wheel_leg_motor::dynamic::motor_deg_clc() {
     this->single_deg = this->dynamic_motor_->status.angle/ENCODER_RANGE*PI_F32*2;
     (single_deg -old_deg)>PI_F32?round_cnt-=1:(single_deg - old_deg) < -PI_F32?round_cnt+=1:0;
@@ -61,7 +60,13 @@ void wheel_leg_motor::dynamic::motor_deg_clc() {
     old_deg = single_deg;
 }
 void wheel_leg_motor::dynamic::tor_ctrl(float32_t tor) {
+    motor_deg_clc();
     int16_t ctrl_current = (int16_t)TOR_CAST(tor);
     this->dynamic_motor_->update(ctrl_current*dir_);
 }
-
+float32_t wheel_leg_motor::dynamic::get_deg() {
+    return this->total_deg;
+}
+float32_t wheel_leg_motor::dynamic::get_v(){
+    return dynamic_motor_->status.speed*2*PI_F32/60.0f;
+}
